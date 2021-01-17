@@ -132,7 +132,7 @@ endif
 
 #########  compilation flags  #########
 
-HEADERS= util.h util_dbus.h util_netlink.h evbus.h hsflowd.h hsflowtokens.h hsflow_ethtool.h cpu_utils.h dropPoints_sw.h dropPoints_hw.h Makefile
+HEADERS= util.h util_dbus.h util_netlink.h util_route.h evbus.h hsflowd.h hsflowtokens.h hsflow_ethtool.h cpu_utils.h dropPoints_sw.h dropPoints_hw.h Makefile
 
 # compiler
 #CC= g++
@@ -265,7 +265,8 @@ OBJS_HSFLOWD= hsflowconfig.o \
               readHidCounters.o \
               readNioCounters.o \
 	      readTcpipCounters.o \
-	      readPackets.o
+	      readPackets.o \
+		  util_route.o
 
 OBJS_JSON=mod_json.o
 OBJS_DNSSD=mod_dnssd.o
@@ -274,18 +275,18 @@ OBJS_KVM=mod_kvm.o
 OBJS_DOCKER=mod_docker.o
 OBJS_ULOG=mod_ulog.o
 OBJS_NFLOG=mod_nflog.o
-OBJS_PSAMPLE=mod_psample.o util_netlink.o
-OBJS_DROPMON=mod_dropmon.o util_netlink.o
+OBJS_PSAMPLE=mod_psample.o util_netlink.o util_route.o
+OBJS_DROPMON=mod_dropmon.o util_netlink.o util_route.o
 OBJS_PCAP=mod_pcap.o
-OBJS_TCP=mod_tcp.o util_netlink.o
+OBJS_TCP=mod_tcp.o util_netlink.o util_route.o
 OBJS_NVML=mod_nvml.o
 OBJS_OVS=mod_ovs.o
-OBJS_CUMULUS=mod_cumulus.o
+OBJS_CUMULUS=mod_cumulus.o util_route.o
 OBJS_DENT=mod_dent.o
 OBJS_OPX=mod_opx.o
 OBJS_SONIC=mod_sonic.o
 OBJS_DBUS=mod_dbus.o util_dbus.o
-OBJS_SYSTEMD=mod_systemd.o util_dbus.o util_netlink.o
+OBJS_SYSTEMD=mod_systemd.o util_dbus.o util_netlink.o util_route.o
 OBJS_EAPI=mod_eapi.o
 
 BUILDTGTS= mod_json.so \
@@ -353,6 +354,9 @@ util_dbus.o: util_dbus.c $(HEADERS)
 ######## Netlink utils ##########
 
 util_netlink.o: util_netlink.c $(HEADERS)
+	$(CC) $(CFLAGS) -c $*.c $(CFLAGS_NETLINK)
+
+util_route.o: util_route.c $(HEADERS)
 	$(CC) $(CFLAGS) -c $*.c $(CFLAGS_NETLINK)
 
 #########  modules  #########

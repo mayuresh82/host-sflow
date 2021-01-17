@@ -5,6 +5,9 @@ extern "C" {
 
 #include "util_route.h"
 
+// global route table
+route_t *rt = NULL;
+
 int rtnl_receive(int fd, struct msghdr *msg, int flags) {
   int len;
   do {
@@ -65,7 +68,7 @@ static inline int rtm_get_table(struct rtmsg *r, struct rtattr **tb) {
   return table;
 }
 
-int open_netlink() {
+int open_netlink(void) {
   struct sockaddr_nl saddr;
   int sock = socket(AF_NETLINK, SOCK_RAW, NETLINK_ROUTE);
   if (sock < 0) {
@@ -101,24 +104,24 @@ int add_route(struct nlmsghdr *nl_header_answer) {
   int len = nl_header_answer->nlmsg_len;
   struct rtattr *tb[RTA_MAX + 1];
   int table;
-  char buf[256];
   len -= NLMSG_LENGTH(sizeof(*r));
   if (len < 0) {
     perror("Wrong message length");
-    return false;
+    return -1;
   }
   parse_rtattr(tb, RTA_MAX, RTM_RTA(r), len);
   table = rtm_get_table(r, tb);
   if (r->rtm_family != AF_INET && table != RT_TABLE_MAIN) {
-    return false;
+    return -1;
   }
   if (!tb[RTA_DST]) {
-    return false;
+    return -1;
   }
   struct in_addr *rt_in_addr = (struct in_addr *)(RTA_DATA(tb[RTA_DST]));
   route_t *new_route = (route_t *)malloc(sizeof(route_t));
   new_route->addr = rt_in_addr->s_addr;
   new_route->mask = (0xFFFFFFFF >> (32 - r->rtm_dst_len));
+  new_route->maskLen = r->rtm_dst_len;
 
   if (tb[RTA_GATEWAY]) {
     struct in_addr *rt_gw = (struct in_addr *)(RTA_DATA(tb[RTA_GATEWAY]));
@@ -132,7 +135,7 @@ int add_route(struct nlmsghdr *nl_header_answer) {
   return 0;
 }
 
-int load_routes() {
+int load_routes(void) {
   int nl_sock = open_netlink();
 
   if (do_route_dump_requst(nl_sock) < 0) {
@@ -150,7 +153,6 @@ int load_routes() {
       .msg_iovlen = 1,
   };
   char *buf;
-  int dump_intr = 0;
   int status = rtnl_recvmsg(nl_sock, &msg, &buf);
   struct nlmsghdr *h = (struct nlmsghdr *)buf;
   int msglen = status;
@@ -180,8 +182,8 @@ int load_routes() {
   return status;
 }
 
-int route_table_size() {
-  int len;
+int route_table_size(void) {
+  int len = 0;
   route_t *temp = rt;
   while (temp != NULL) {
     len++;
@@ -190,12 +192,12 @@ int route_table_size() {
   return len;
 }
 
-bool lpm_lookup(uint32_t dest, route_t **match) {
-  bool matched = false;
+int lpm_lookup(uint32_t dest, route_t **match) {
+  int matched = 0;
   route_t *temp = rt;
   while (temp != NULL) {
-    matched = (temp->addr & mask) == (dest & mask);
-    if ((matched) && (temp->mask > (*match)->mask)) {
+    matched = (temp->addr & temp->mask) == (dest & temp->mask);
+    if ((matched) && (temp->maskLen > (*match)->maskLen)) {
       *match = temp;
     }
     temp = temp->next;

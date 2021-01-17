@@ -6,17 +6,10 @@
 extern "C" {
 #endif
 
-#include "hsflowd.h"
-#include "cpu_utils.h"
-#include "cJSON.h"
-
-//mgaitonde
-#ifdef ADD_EXT_ROUTER
 #include "util_route.h"
-load_routes()
-myLog(LOG_INFO, "Loaded route table of %d entries", route_table_size());
-#endif
-//mgaitonde
+#include "hsflowd.h"
+#include "cJSON.h"
+#include "cpu_utils.h"
 
   // globals - easier for signal handler
   HSP HSPSamplingProbe;
@@ -25,7 +18,7 @@ myLog(LOG_INFO, "Loaded route table of %d entries", route_table_size());
 
   static bool installSFlowSettings(HSP *sp, HSPSFlowSettings *settings);
   static bool updatePollingInterval(HSP *sp);
-  
+
   /*_________________---------------------------__________________
     _________________     agent callbacks       __________________
     -----------------___________________________------------------
@@ -1648,6 +1641,15 @@ myLog(LOG_INFO, "Loaded route table of %d entries", route_table_size());
     // also helps to simplify the systemd unit file and avoids the need to add some
     // other script to the package.
     readSystemUUID(sp);
+
+    // mgaitonde
+#ifdef ADD_EXT_ROUTER
+    if (load_routes() < 0) {
+      myLog(LOG_ERR, "Failed to load routes");
+    } else {
+      myLog(LOG_INFO, "Loaded route table of %d entries", route_table_size());
+    }
+#endif
 
     // don't run if we think another one is already running
     if(UTFileExists(sp->pidFile)) {

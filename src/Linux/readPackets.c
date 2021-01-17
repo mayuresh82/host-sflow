@@ -6,6 +6,7 @@
 extern "C" {
 #endif
 
+#include "util_route.h"
 #include "hsflowd.h"
 #include <net/if.h>
 #include <netinet/in.h>
@@ -295,16 +296,14 @@ extern "C" {
       sizeof(SFLFlow_sample_element));
     extRouter->tag = SFLFLOW_EX_ROUTER;
     route_t *dstRoute = (route_t *)malloc(sizeof(route_t));
-    bool match = lpm_lookup(ps->dst.address.ip_v4.addr, dstRoute);
-    if (match) {
-      extRouter->flowType->dst_mask = dstRoute->mask;
-      extRouter->flowType->nexthop.type = SFLADDRESSTYPE_IP_V4;
-      extRouter->flowType->nexthop.ip_v4.addr = dstRoute->gw;
+    if (lpm_lookup(ps->dst.address.ip_v4.addr, &dstRoute)) {
+      extRouter->flowType.router.dst_mask = dstRoute->mask;
+      extRouter->flowType.router.nexthop.type = SFLADDRESSTYPE_IP_V4;
+      extRouter->flowType.router.nexthop.address.ip_v4.addr = dstRoute->gw;
     }
     route_t *srcRoute = (route_t *)malloc(sizeof(route_t));
-    bool match = lpm_lookup(ps->src.address.ip_v4.addr, srcRoute);
-    if (match) {
-      extRouter->flowType->src_mask = srcRoute->mask;
+    if (lpm_lookup(ps->src.address.ip_v4.addr, &srcRoute)) {
+      extRouter->flowType.router.src_mask = srcRoute->mask;
     }
   }
 
