@@ -10,6 +10,14 @@ extern "C" {
 #include "cpu_utils.h"
 #include "cJSON.h"
 
+//mgaitonde
+#ifdef ADD_EXT_ROUTER
+#include "util_route.h"
+load_routes()
+myLog(LOG_INFO, "Loaded route table of %d entries", route_table_size());
+#endif
+//mgaitonde
+
   // globals - easier for signal handler
   HSP HSPSamplingProbe;
   int exitStatus = EXIT_SUCCESS;

@@ -290,6 +290,24 @@ extern "C" {
     }
   }
 
+  void addExtRouterInfo(HSPPendingSample *ps) {
+    SFLFlow_sample_element *extRouter = pendingSample_calloc(ps,
+      sizeof(SFLFlow_sample_element));
+    extRouter->tag = SFLFLOW_EX_ROUTER;
+    route_t *dstRoute = (route_t *)malloc(sizeof(route_t));
+    bool match = lpm_lookup(ps->dst.address.ip_v4.addr, dstRoute);
+    if (match) {
+      extRouter->flowType->dst_mask = dstRoute->mask;
+      extRouter->flowType->nexthop.type = SFLADDRESSTYPE_IP_V4;
+      extRouter->flowType->nexthop.ip_v4.addr = dstRoute->gw;
+    }
+    route_t *srcRoute = (route_t *)malloc(sizeof(route_t));
+    bool match = lpm_lookup(ps->src.address.ip_v4.addr, srcRoute);
+    if (match) {
+      extRouter->flowType->src_mask = srcRoute->mask;
+    }
+  }
+
   /*_________________---------------------------__________________
     _________________    takeSample             __________________
     -----------------___________________________------------------
@@ -530,6 +548,9 @@ extern "C" {
     if(sp->evt_flow_sample == NULL)
       sp->evt_flow_sample = EVGetEvent(EVCurrentBus(), HSPEVENT_FLOW_SAMPLE);
     EVEventTx(sp->rootModule, sp->evt_flow_sample, ps, sizeof(*ps));
+#ifdef ADD_EXT_ROUTER
+    addExtRouterInfo(ps);
+#endif
     releasePendingSample(sp, ps);
   }
 

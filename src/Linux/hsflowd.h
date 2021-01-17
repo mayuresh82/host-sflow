@@ -81,6 +81,8 @@ extern "C" {
     linkedlist = obj; \
   } while(0)
 
+#define ADD_EXT_ROUTER 1 // mgaitonde
+
 #define PROCFS_STR STRINGIFY_DEF(PROCFS)
 #define SYSFS_STR STRINGIFY_DEF(SYSFS)
 #define ETCFS_STR STRINGIFY_DEF(ETCFS)
